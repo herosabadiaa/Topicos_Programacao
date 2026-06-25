@@ -23,7 +23,7 @@ int main(void){
     SetTargetFPS(60);  
     
     Cartas carta;
-    carta.imagem = LoadImage("png.png");
+    carta.imagem = LoadImage("images/azul.png");
     carta.textura = LoadTextureFromImage(carta.imagem);  
     UnloadImage(carta.imagem); 
 
@@ -46,26 +46,25 @@ int main(void){
             if((CheckCollisionRecs(deck, areaRec))){
                 pull = true;
             }
-            if (pull == true){
-                carta.posicao = (Vector2){mousePosition.x, mousePosition.y};
-                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                    for(int i = 0; i<5; i++){
-                        if((CheckCollisionRecs(areas[i].posicao, areaRec))){
-                            pull = false;
-                        }
-                    }
+            for(int i = 0; i<5; i++){
+                if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                    pull = false;
                 }
             }
         }
+        if (pull == true){
+            carta.posicao = (Vector2){mousePosition.x-carta.textura.width/2, mousePosition.y - carta.textura.height/2};
+        }
+           
+        
         BeginDrawing();
             ClearBackground(WHITE);
-            if (pull == true){
-            DrawTexture(carta.textura, carta.posicao.y, carta.posicao.x, WHITE);
-                DrawFPS(screenWidth-100, 30);
-            }
             DrawRectangle(deck.x, deck.y, deck.width, deck.height, BLUE);
             for(int i=0;i<5;i++){
                 DrawRectangle(areas[i].posicao.x, areas[i].posicao.y, areas[i].posicao.width, areas[i].posicao.height, RED);
+            }
+            if (pull == true){
+                DrawTexture(carta.textura, carta.posicao.x, carta.posicao.y, WHITE);
             }
             DrawRectangle(areaRec.x, areaRec.y, areaRec.width, areaRec.height, BLACK);
         EndDrawing();
