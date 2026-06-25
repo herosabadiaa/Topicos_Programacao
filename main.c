@@ -12,6 +12,7 @@ typedef struct Cartas{
 
 typedef struct Posicoes{
     Rectangle posicao;
+    Cartas carregada;
 }Posicoes;
 
 
@@ -45,11 +46,17 @@ int main(void){
             if((CheckCollisionRecs(deck, areaRec))){
                 pull = true;
             }
-        if (pull == true){
-            carta.posicao = (Vector2){mousePosition.x, mousePosition.y};
+            if (pull == true){
+                carta.posicao = (Vector2){mousePosition.x, mousePosition.y};
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+                    for(int i = 0; i<5; i++){
+                        if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                            pull = false;
+                        }
+                    }
+                }
+            }
         }
-        }
-
         BeginDrawing();
             ClearBackground(WHITE);
             if (pull == true){
