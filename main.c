@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define MAX_POSITION 5
+
 
 typedef struct Cartas{
     Image imagem;
@@ -13,7 +15,13 @@ typedef struct Cartas{
 typedef struct Posicoes{
     Rectangle posicao;
     Cartas carregada;
+    bool vazia;
 }Posicoes;
+
+typedef struct Deck{
+    Rectangle deck_area;
+    Cartas deck[60];
+}Deck;
 
 
 int main(void){
@@ -24,44 +32,65 @@ int main(void){
     
     Cartas carta;
     carta.imagem = LoadImage("images/azul.png");
+    ImageResize(&carta.imagem, 40, 40); 
     carta.textura = LoadTextureFromImage(carta.imagem);  
     UnloadImage(carta.imagem); 
 
     Vector2 mousePosition = {-100, -100};
     Rectangle areaRec = {-100, -100};
-    Rectangle deck = {screenWidth-100, screenHeight-100, screenWidth/6, screenHeight/4};
+
+    Deck deck;
+    deck.deck_area = (Rectangle){screenWidth-50, screenHeight-50, 50, 50};
+
+    
     bool pull = false;
     Posicoes areas[5];
-    for(int i = 0; i<5; i++){
+    for(int i = 0; i<MAX_POSITION; i++){
         areas[i].posicao.x = i*screenWidth/5;
         areas[i].posicao.y = 3*screenHeight/4;
         areas[i].posicao.width = 80;
         areas[i].posicao.height =120;
+        areas[i].vazia = true;
     }
 
     while(!WindowShouldClose()){
         mousePosition = GetMousePosition();
-        areaRec = (Rectangle){mousePosition.x-10, mousePosition.y-10, 20,20};
+        areaRec = (Rectangle){mousePosition.x-0.25, mousePosition.y-0.25, 0.5,0.5};
+        if (pull == true){
+            carta.posicao = (Vector2){mousePosition.x-20, mousePosition.y-20};
+        }
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            if((CheckCollisionRecs(deck, areaRec))){
+            if((CheckCollisionRecs(deck.deck_area, areaRec))){
                 pull = true;
             }
-            for(int i = 0; i<5; i++){
-                if((CheckCollisionRecs(areas[i].posicao, areaRec))){
-                    pull = false;
+            if (pull == true){
+                for(int i = 0; i<5; i++){
+                    if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                        if(areas[i].vazia == true){
+                            pull = false;
+                            areas[i].carregada = carta;
+                            areas[i].vazia = false;
+                        }
+                    }
                 }
             }
         }
-        if (pull == true){
-            carta.posicao = (Vector2){mousePosition.x-carta.textura.width/2, mousePosition.y - carta.textura.height/2};
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+            for(int i = 0; i<5; i++){
+                if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                    areas[i].vazia = true;
+                    areas[i].carregada = (Cartas){0};
+                }
+            }
         }
-           
-        
         BeginDrawing();
             ClearBackground(WHITE);
-            DrawRectangle(deck.x, deck.y, deck.width, deck.height, BLUE);
-            for(int i=0;i<5;i++){
+            DrawRectangle(deck.deck_area.x, deck.deck_area.y, deck.deck_area.width, deck.deck_area.height, GREEN);
+            for(int i=0;i<MAX_POSITION;i++){
                 DrawRectangle(areas[i].posicao.x, areas[i].posicao.y, areas[i].posicao.width, areas[i].posicao.height, RED);
+                if(areas[i].vazia == false){
+                    DrawTexture(areas[i].carregada.textura, areas[i].posicao.x, areas[i].posicao.y, WHITE);
+                }
             }
             if (pull == true){
                 DrawTexture(carta.textura, carta.posicao.x, carta.posicao.y, WHITE);
