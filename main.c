@@ -33,8 +33,7 @@ int main(void){
     Deck deck;
     deck.deck_area = (Rectangle){screenWidth-50, screenHeight-50, 50, 50};
 
-    //Define a carta(apenas teste)
-    Cartas carta;
+    //Define as cartas no deck
     Image imagem = LoadImage("images/azul.png");
     ImageResize(&imagem, 40, 40); 
     
