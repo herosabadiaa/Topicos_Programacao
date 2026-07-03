@@ -11,6 +11,7 @@
 //----------------------------------------------------------------------------------
 #define MAX_POSITION 5 
 #define MAX_DECK 60
+#define MAX_CEMITERIO 60
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -18,6 +19,8 @@
 typedef struct Cartas {
     Texture2D textura;
     Vector2 posicao;
+    int id;
+    int hp;
 } Cartas;
 
 typedef struct Posicoes {
@@ -30,6 +33,11 @@ typedef struct Deck {
     Rectangle deck_area;
     Cartas deck[MAX_DECK];
 } Deck;
+
+typedef struct Cemiterio {
+    Cartas cemiterio[MAX_CEMITERIO];
+    Rectangle cemit_area;
+} Cemiterio;
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -52,17 +60,30 @@ int main(void) {
 
     //Instancia as cartas
     Image imagem = LoadImage("images/azul.png");
-    ImageResize(&imagem, 40, 40); 
+    ImageResize(&imagem, 40, 40);
+    Texture2D textura = LoadTextureFromImage(imagem);
     for(int i=0;i<MAX_DECK;i++){
-        deck.deck[i].textura = LoadTextureFromImage(imagem);  
+        deck.deck[i].textura = textura;
+        deck.deck[i].hp = 2000;
+        deck.deck[i].id = i+1;
     }
     UnloadImage(imagem); 
+
+    //Instancia o cemiterio
+    Cemiterio cemiterio;
+    cemiterio.cemit_area = (Rectangle){screenWidth-50, screenHeight-150, 50, 50};
 
     //Instancia o estado de ação e controle do mouse
     Vector2 mousePosition = {-100, -100};
     Rectangle areaRec = {-100, -100};
     bool pull = false;
     int carta_num = 0;
+    int cemit_num = 0;
+    bool vis_cemit = false;
+    bool vis_deck = false;
+    bool gui_cemit = false;
+    bool close = false;
+    int id_close;
 
     // Cria e define a posição das áreas do campo
     Posicoes areas[MAX_POSITION]; 
@@ -87,6 +108,12 @@ int main(void) {
             deck.deck[carta_num].posicao = (Vector2){mousePosition.x-20, mousePosition.y-20};
         }
 
+        if (close){
+            if(IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)){
+                close = false;
+            }
+        }
+
         // Clique com botão esquerdo
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             if(carta_num < MAX_DECK){
@@ -108,14 +135,45 @@ int main(void) {
             }
         }
 
-        // Clique com botão esquerdo
+        // Clique com botão direito
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
             for(int i = 0; i<MAX_POSITION; i++){
                 if((CheckCollisionRecs(areas[i].posicao, areaRec))){
-                    areas[i].vazia = true;
-                    areas[i].carregada = (Cartas){0};
+                    areas[i].carregada.hp -= 1000;
+                    if(areas[i].carregada.hp <= 0 && areas[i].carregada.id != 0){
+                        cemiterio.cemiterio[cemit_num] = areas[i].carregada;
+                        areas[i].vazia = true;
+                        areas[i].carregada = (Cartas){0};
+                        cemit_num += 1;
+                    }
                 }
             }
+        }
+
+        //Clique com o scrool
+        if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)){
+            for(int i = 0; i<MAX_POSITION; i++){
+                if(areas[i].vazia == false){
+                    if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                        close = true;
+                        id_close = i;
+                    }
+                }
+            }
+        }
+
+        // Clique com a tecla 'T'
+        if (IsKeyDown(KEY_T)){
+            gui_cemit = !gui_cemit;
+        }
+
+        // Hovering
+        vis_cemit = false;
+        vis_deck = false;
+        if((CheckCollisionRecs(cemiterio.cemit_area, areaRec))){
+            vis_cemit = true;
+        } else if((CheckCollisionRecs(deck.deck_area, areaRec))){
+            vis_deck = true;
         }
 
         // 2. Rendering
@@ -123,13 +181,23 @@ int main(void) {
         BeginDrawing();
             ClearBackground(WHITE);
 
-            // Interface (Texto do Deck)
-            char ammoText[16];
-            snprintf(ammoText, sizeof(ammoText), "DECK: %d/%d", MAX_DECK-carta_num, MAX_DECK);
-            DrawText(ammoText, 6.7*screenWidth/8, 20, 20, BLACK);
+            // Interface Deck
+            if(vis_deck){
+                char deckText[64];
+                snprintf(deckText, sizeof(deckText), "DECK: %d/%d", MAX_DECK-carta_num, MAX_DECK);
+                DrawText(deckText, 6.5*screenWidth/8, 20, 20, BLACK);
+            }
 
-            // Desenha a área do Deck
+            // Interface Cemiterio
+            if(vis_cemit){
+                char cemitText[64];
+                snprintf(cemitText, sizeof(cemitText), "CEMITERIO: %d/%d", cemit_num, MAX_CEMITERIO);
+                DrawText(cemitText, 6*screenWidth/8, 20, 20, BLACK);
+            }
+
+            // Desenha a área do Deck e Cemiterio
             DrawRectangle(deck.deck_area.x, deck.deck_area.y, deck.deck_area.width, deck.deck_area.height, GREEN);
+            DrawRectangle(cemiterio.cemit_area.x, cemiterio.cemit_area.y, cemiterio.cemit_area.width, cemiterio.cemit_area.height, BLACK);
 
             // Desenha as posições do campo e as cartas carregadas nelas
             for(int i=0;i<MAX_POSITION;i++){
@@ -142,6 +210,14 @@ int main(void) {
             // Desenha a carta sendo arrastada (se houver)
             if (pull == true){
                 DrawTexture(deck.deck[carta_num].textura, deck.deck[carta_num].posicao.x, deck.deck[carta_num].posicao.y, WHITE);
+            }
+            if(close == true && areas[id_close].vazia == false){
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 128});
+                Texture2D texGrande = areas[id_close].carregada.textura;
+                Rectangle source = { 0.0f, 0.0f, (float)texGrande.width, (float)texGrande.height };
+                Rectangle dest = { (float)screenWidth/2 - 80, (float)screenHeight/2 - 120, 160, 240 };
+                Vector2 origin = { 0, 0 };
+                DrawTexturePro(texGrande, source, dest, origin, 0.0f, WHITE);            
             }
 
             // Desenha o hitbox do mouse
