@@ -58,8 +58,8 @@ int main(void) {
     Deck deck;
     deck.deck_area = (Rectangle){screenWidth-50, screenHeight-50, 50, 50};
 
-    //Instancia as cartas
-    Image imagem = LoadImage("images/azul.png");
+    //Instancia as cartasazul
+    Image imagem = LoadImage("resources/blue.png");
     ImageResize(&imagem, 40, 40);
     Texture2D textura = LoadTextureFromImage(imagem);
     for(int i=0;i<MAX_DECK;i++){
@@ -101,10 +101,12 @@ int main(void) {
     while(!WindowShouldClose()){
         // 1. Update / Input Handling
         //--------------------------------------------------------------------------
+
+        //Future trail system
         mousePosition = GetMousePosition();
         areaRec = (Rectangle){mousePosition.x-0.25, mousePosition.y-0.25, 0.5,0.5};
 
-        if (pull == true){
+        if (pull){
             deck.deck[carta_num].posicao = (Vector2){mousePosition.x-20, mousePosition.y-20};
         }
 
@@ -117,13 +119,13 @@ int main(void) {
         // Clique com botão esquerdo
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             if(carta_num < MAX_DECK){
-                if((CheckCollisionRecs(deck.deck_area, areaRec))){
+                if (CheckCollisionPointRec(GetMousePosition(), deck.deck_area)){
                     pull = true;
                 }
             }
-            if (pull == true){
+            if (pull){
                 for(int i = 0; i<MAX_POSITION; i++){
-                    if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                    if((CheckCollisionPointRec(GetMousePosition(), areas[i].posicao))){
                         if(areas[i].vazia == true){
                             pull = false;
                             areas[i].carregada = deck.deck[carta_num];
@@ -138,13 +140,14 @@ int main(void) {
         // Clique com botão direito
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
             for(int i = 0; i<MAX_POSITION; i++){
-                if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                if((CheckCollisionPointRec(GetMousePosition(), areas[i].posicao))){
                     areas[i].carregada.hp -= 1000;
                     if(areas[i].carregada.hp <= 0 && areas[i].carregada.id != 0){
                         cemiterio.cemiterio[cemit_num] = areas[i].carregada;
                         areas[i].vazia = true;
                         areas[i].carregada = (Cartas){0};
                         cemit_num += 1;
+                        close = false;
                     }
                 }
             }
@@ -154,7 +157,7 @@ int main(void) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)){
             for(int i = 0; i<MAX_POSITION; i++){
                 if(areas[i].vazia == false){
-                    if((CheckCollisionRecs(areas[i].posicao, areaRec))){
+                    if((CheckCollisionPointRec(GetMousePosition(), areas[i].posicao))){
                         close = true;
                         id_close = i;
                     }
@@ -170,9 +173,9 @@ int main(void) {
         // Hovering
         vis_cemit = false;
         vis_deck = false;
-        if((CheckCollisionRecs(cemiterio.cemit_area, areaRec))){
+        if((CheckCollisionPointRec(GetMousePosition(), cemiterio.cemit_area))){
             vis_cemit = true;
-        } else if((CheckCollisionRecs(deck.deck_area, areaRec))){
+        } else if((CheckCollisionPointRec(GetMousePosition(), deck.deck_area))){
             vis_deck = true;
         }
 
@@ -208,20 +211,20 @@ int main(void) {
             }
 
             // Desenha a carta sendo arrastada (se houver)
-            if (pull == true){
+            if (pull){
                 DrawTexture(deck.deck[carta_num].textura, deck.deck[carta_num].posicao.x, deck.deck[carta_num].posicao.y, WHITE);
             }
             if(close == true && areas[id_close].vazia == false){
                 DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 128});
                 Texture2D texGrande = areas[id_close].carregada.textura;
                 Rectangle source = { 0.0f, 0.0f, (float)texGrande.width, (float)texGrande.height };
-                Rectangle dest = { (float)screenWidth/2 - 80, (float)screenHeight/2 - 120, 160, 240 };
-                Vector2 origin = { 0, 0 };
-                DrawTexturePro(texGrande, source, dest, origin, 0.0f, WHITE);            
+                Rectangle pos = { (float)screenWidth/2 - 80, (float)screenHeight/2 - 120, 160, 240 };
+                Vector2 normal = { 0, 0 };
+                DrawTexturePro(texGrande, source, pos, normal, 0.0f, WHITE);            
             }
 
-            // Desenha o hitbox do mouse
-            DrawRectangle(areaRec.x, areaRec.y, areaRec.width, areaRec.height, BLACK);
+            // Desenha a trail
+            //DrawRectangle(areaRec.x, areaRec.y, areaRec.width, areaRec.height, BLACK);
         EndDrawing();
     }
 
