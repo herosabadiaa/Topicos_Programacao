@@ -166,8 +166,9 @@ int main(void) {
         }
 
         // Clique com a tecla 'T'
-        if (IsKeyDown(KEY_T)){
+        if (IsKeyPressed(KEY_T)){
             gui_cemit = !gui_cemit;
+            close = false;
         }
 
         // Hovering
@@ -222,8 +223,27 @@ int main(void) {
                 Vector2 normal = { 0, 0 };
                 DrawTexturePro(texGrande, source, pos, normal, 0.0f, WHITE);            
             }
+            
+            if(gui_cemit){
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 128});
+                DrawRectangle(screenWidth/2-screenWidth/4, screenHeight/2-screenHeight/4, screenWidth/2+10, screenHeight/2, YELLOW);
+                int row = 1;
+                int max_fileira;
+                for(int i=0;i<cemit_num; i++){
+                    int l = i;
+                    if(screenWidth/2*row - 45*i <=0){
+                        max_fileira = i;
+                        row += 1;
+                        printf("%d", row);
+                    }
+                    if(row != 1){
+                        l -= max_fileira;
+                    }
+                    DrawTexture(cemiterio.cemiterio[i].textura, 5 + screenWidth/2-screenWidth/4+(45*l), (screenHeight/2-screenHeight/4 + screenHeight/8*(row-1)) + 5, WHITE);
+                }
+            }
 
-            // Desenha a trail
+            //Desenha a trail
             //DrawRectangle(areaRec.x, areaRec.y, areaRec.width, areaRec.height, BLACK);
         EndDrawing();
     }
